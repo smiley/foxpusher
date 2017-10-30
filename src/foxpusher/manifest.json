@@ -1,0 +1,45 @@
+{
+
+  "manifest_version": 2,
+  "name": "Foxpusher",
+  "version": "1.0",
+
+  "description": "Beam tabs and links to your phone via Simplepush",
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+  
+  "options_ui": {
+    "page": "settings/settings.html"
+  },
+  
+  "icons": {
+    "48": "icons/phone-48.png",
+    "64": "icons/phone-64.png",
+    "128": "icons/phone-48.png",
+    "256": "icons/phone-256.png",
+    "512": "icons/phone-512.png"
+  },
+
+  "browser_action": {
+    "default_title": "Push to device",
+    "default_icon": {
+      "16": "icons/phone-16.png",
+      "32": "icons/phone-32.png",
+      "48": "icons/phone-48.png",
+      "64": "icons/phone-64.png",
+      "128": "icons/phone-48.png",
+      "256": "icons/phone-256.png",
+      "512": "icons/phone-512.png"
+    }
+  },
+  
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "https://api.simplepush.io/send"
+  ]
+
+}

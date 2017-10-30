@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link type="text/css" rel="stylesheet" href="settings.css">
+  </head>
+
+  <body>
+
+    <div class="settings-content">
+      <div id="section-key" class="setting-section">
+        <label id="keyTitle" class="propertyTitle" for="spKey">Simplepush key</label>
+
+        <input type="password" id="spKey" name="key">
+      </div>
+      <div id="section-title" class="setting-section">
+        <label id="titleTitle" class="propertyTitle">Notification title</label>
+
+        <input type="radio" name="title" value="tab" id="title_tab">
+        <label for="title_tab" id="tab_label">Use the tab's/link's title</label>
+
+        <input type="radio" name="title" value="private" id="title_private">
+        <label for="title_private" id="private_label">Use a generic title</label>
+      </div>
+    </div>
+
+  <script type="text/javascript" src="settings.js"></script>
+  </body>
+
+</html>
