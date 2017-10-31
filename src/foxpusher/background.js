@@ -1,19 +1,65 @@
 var API_URL = "https://api.simplepush.io/send";
+var BUTTON_CAPTION = "Push to device";
+var SEND_STATUS_DELAY = 3000;
+
+function urlencodeFormData(fd){
+    var params = new URLSearchParams();
+    for(var pair of fd.entries()){
+        typeof pair[1]=='string' && params.append(pair[0], pair[1]);
+    }
+    return params.toString();
+}
 
 function send(key, title, message, event, encrypted) {
-  var http = new XMLHttpRequest();
-  
-  http.open("POST", API_URL, true);
-  http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-  
-  var data = "key=" + key;
-  if(typeof title !== "undefined" && title != '') {data += "&title=" + encodeURIComponent(title);}
-  data += "&msg=" + encodeURIComponent(message);
-  if(typeof event !== "undefined" && event != '') {data += "&event=" + event;}
-  
-  http.send(data);
-  
-  return http;
+    var data = new FormData();
+    data.append("key", key);
+    if (typeof title !== "undefined" && title != '') { data.append("title", title); };
+    data.append("msg", message);
+    if (typeof event !== "undefined" && event != '') { data.append("event", event); };
+    
+    var encodedData = urlencodeFormData(data);
+    
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+    
+    return fetch(API_URL, {method: 'POST', mode: 'cors', body: encodedData, headers: myHeaders});
+}
+
+var _latestClear = undefined;
+
+function setBadgeTextEx(details) {
+    if (_latestClear !== undefined) {
+        clearTimeout(_latestClear);
+        _latestClear = undefined;
+    }
+    
+    browser.browserAction.setBadgeText(details)
+}
+
+function clearButtonStatusAsync(timeout) {
+    _latestClear = setTimeout(function() {
+        browser.browserAction.setBadgeText({text: ''});
+        browser.browserAction.setTitle({title: BUTTON_CAPTION});
+        _latestClear = undefined;
+    }, timeout);
+}
+
+function setButtonStatus(emojiCode, errorText) {
+    if (emojiCode === null) {
+        setBadgeTextEx({
+            text: ''
+        });
+    } else {
+        setBadgeTextEx({
+            text: emojiCode
+        });
+    }
+    
+    if (errorText === null || errorText === undefined) {
+        browser.browserAction.setTitle({title: BUTTON_CAPTION});
+    } else {
+        browser.browserAction.setTitle({title: BUTTON_CAPTION + " (" + errorText + ")"});
+    }
 }
 
 function sendURLAsync(_title, _url, _originTitle, _originURL, _isLink) {
@@ -23,6 +69,9 @@ function sendURLAsync(_title, _url, _originTitle, _originURL, _isLink) {
                 const KEY = obj.key || "";
                 if (KEY === "") {
                     console.error('No key set!');
+                    setButtonStatus('🔑', 'No Simplepush key set');
+                    clearButtonStatusAsync(SEND_STATUS_DELAY);
+                    browser.runtime.openOptionsPage();
                     return;
                 }
                 
@@ -37,7 +86,15 @@ function sendURLAsync(_title, _url, _originTitle, _originURL, _isLink) {
                     body += '\n\nOriginally from: "' + _originTitle + '"\n' + _originURL;
                 }
                 
-                send(KEY, title, body, "foxpusher");
+                send(KEY, title, body, "foxpusher")
+                    .then(function(res) {
+                        setButtonStatus('✔');
+                        clearButtonStatusAsync(SEND_STATUS_DELAY);
+                    })
+                    .catch(function(err) {
+                        setButtonStatus('⚠', "Failed to send; try again later");
+                        clearButtonStatusAsync(SEND_STATUS_DELAY);
+                    });
             }
         );
 }
@@ -72,5 +129,6 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 browser.browserAction.onClicked.addListener((tab) => {
+    setButtonStatus('⌛', "Sending...");
     sendURLAsync(tab.title, tab.url, null, null, false);
 });
