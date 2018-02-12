@@ -62,8 +62,28 @@ function setButtonStatus(emojiCode, errorText) {
     }
 }
 
+if (browser === undefined) {
+    var browser = chrome;
+}
+
+function getFromLocalStorage(arg) {
+    if (chrome !== undefined) {
+        return new Promise(function(resolve, reject) {
+            browser.storage.local.get(arg, function (items) {
+                if (chrome.runtime.lastError !== undefined) {
+                    reject(chrome.runtime.lastError);
+                } else {
+                    resolve(items);
+                }
+            });
+        });
+    } else {
+        return browser.storage.local.get(arg);
+    }
+}
+
 function sendURLAsync(_title, _url, _originTitle, _originURL, _isLink) {
-    browser.storage.local.get()
+    getFromLocalStorage()
         .then(
             function(obj) {
                 const KEY = obj.key || "";
@@ -106,19 +126,48 @@ const ICONS = {
   "64": "icons/phone-64.png"
 };
 
-browser.contextMenus.create({
+function replaceInList(list, replacements) {
+    var newList = [];
+    for (var index in list) {
+        var replacementValue = replacements[list[index]];
+        if (replacementValue === null) {
+            continue;
+        } else if (replacementValue !== undefined) {
+            newList.push(replacementValue);
+        } else {
+            newList.push(list[index]);
+        }
+    }
+    
+    return newList;
+}
+
+function adaptContextMenuManifestForBrowser(manifest) {
+    if (chrome !== undefined) {
+        delete manifest['icons']
+        manifest.contexts = replaceInList(manifest.contexts, {
+            'tab': null
+        });
+    } else {
+        manifest.icons = ICONS;
+    }
+    
+    return manifest;
+}
+
+browser.contextMenus.create(adaptContextMenuManifestForBrowser({
     id: "push-link-to-device",
     title: "Push link to device",
     contexts: ["link"],
     icons: ICONS
-});
+}));
 
-browser.contextMenus.create({
+browser.contextMenus.create(adaptContextMenuManifestForBrowser({
     id: "push-tab-to-device",
     title: "Push tab to device",
     contexts: ["page", "tab"],
     icons: ICONS
-});
+}));
 
 browser.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === "push-link-to-device") {

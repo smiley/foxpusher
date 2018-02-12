@@ -13,8 +13,28 @@ function loadSavedData(data) {
     tabTitleRadio[1].checked = true;
 }
 
+if (browser === undefined) {
+    var browser = chrome;
+}
+
+function getFromLocalStorage(arg) {
+    if (chrome !== undefined) {
+        return new Promise(function(resolve, reject) {
+            browser.storage.local.get(arg, function (items) {
+                if (chrome.runtime.lastError !== undefined) {
+                    reject(chrome.runtime.lastError);
+                } else {
+                    resolve(items);
+                }
+            });
+        });
+    } else {
+        return browser.storage.local.get(arg);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  const savedData = browser.storage.local.get();
+  const savedData = getFromLocalStorage();
   savedData.then(loadSavedData);
 });
 
